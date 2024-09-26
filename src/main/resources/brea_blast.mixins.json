@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.phasetranscrystal.blast.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "nonard.refmap.json",
+  "mixins": [
+
+  ],
+  "client": [
+    "BreaBlastKeyboardHandlerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
