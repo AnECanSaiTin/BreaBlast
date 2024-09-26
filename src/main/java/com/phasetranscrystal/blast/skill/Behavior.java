@@ -6,6 +6,7 @@ import com.phasetranscrystal.nonard.event.KeyInputEvent;
 import com.phasetranscrystal.nonard.util.SkillKeyInputHandler;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.bus.api.Event;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
@@ -15,7 +16,7 @@ import java.util.HashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public class Behavior<T extends LivingEntity> {
+public class Behavior<T extends Entity> {
 
     public final int delay;
     public final Consumer<SkillData<T>> start;
@@ -43,7 +44,7 @@ public class Behavior<T extends LivingEntity> {
         this.listeners = ImmutableMap.copyOf(builder.listeners);
     }
 
-    public static class Builder<T extends LivingEntity> {
+    public static class Builder<T extends Entity> {
         public final Consumer<SkillData<T>> EMPTY = data -> {
         };
         public final BiConsumer<SkillData<T>, Integer> EMPTY_BI = (data, relate) -> {
@@ -62,11 +63,11 @@ public class Behavior<T extends LivingEntity> {
         public IntArrayList keys = new IntArrayList();
         public HashMap<Class<? extends Event>, BiConsumer<? extends Event, SkillData<T>>> listeners = new HashMap<>();
 
-        public static <T extends LivingEntity> Builder<T> create() {
+        public static <T extends Entity> Builder<T> create() {
             return new Builder<>();
         }
 
-        public static <T extends LivingEntity> Builder<T> create(Behavior<T> root) {
+        public static <T extends Entity> Builder<T> create(Behavior<T> root) {
             Builder<T> builder = new Builder<T>();
             builder.inactiveEnergyChange = root.inactiveEnergyChange;
             builder.activeEnergyChange = root.activeEnergyChange;

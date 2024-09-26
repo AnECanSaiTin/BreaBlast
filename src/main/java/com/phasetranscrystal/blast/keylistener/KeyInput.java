@@ -1,30 +1,27 @@
 package com.phasetranscrystal.blast.keylistener;
 
-import com.phasetranscrystal.nonard.Nonard;
-import com.phasetranscrystal.nonard.skill.Behavior;
-import com.phasetranscrystal.nonard.skill.SkillData;
+import com.phasetranscrystal.blast.Blast;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.ICancellableEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-import java.util.Optional;
-
 import static com.phasetranscrystal.nonard.testobjs.SkillTest.SKILL_ATTACHMENT;
 
-@EventBusSubscriber(modid = Nonard.MOD_ID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = Blast.MODID, value = Dist.CLIENT)
 public class KeyInput {
     @SubscribeEvent
-    public static void keyboard(PreKeyInputEvent event) {
+    public static void keyboard(KeyInputEvent.Client event) {
         check(event.getKey(), event.getModifiers(), event.getAction(), event);
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOW)
     public static void mouse(InputEvent.MouseButton.Pre event) {
         check(event.getButton(), event.getModifiers(), event.getAction(), event);
     }

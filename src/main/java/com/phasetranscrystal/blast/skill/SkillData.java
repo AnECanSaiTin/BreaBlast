@@ -3,11 +3,12 @@ package com.phasetranscrystal.blast.skill;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.phasetranscrystal.blast.Blast;
 import com.phasetranscrystal.horiz.EntityEventDistribute;
 import com.phasetranscrystal.horiz.Horiz;
-import com.phasetranscrystal.nonard.Nonard;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -21,8 +22,8 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public class SkillData<T extends LivingEntity> {
-    public static final Codec<SkillData<? extends LivingEntity>> CODEC = RecordCodecBuilder.create((instance) -> instance.group(
+public class SkillData<T extends Entity> {
+    public static final Codec<SkillData<? extends Entity>> CODEC = RecordCodecBuilder.create((instance) -> instance.group(
             Codec.INT.fieldOf("inactiveEnergy").forGetter(SkillData::getInactiveEnergy),
             Codec.INT.fieldOf("activeEnergy").forGetter(SkillData::getActiveEnergy),
             Codec.STRING.optionalFieldOf("behavior").forGetter(SkillData::getBehaviorName),
@@ -34,8 +35,8 @@ public class SkillData<T extends LivingEntity> {
             Codec.STRING.listOf().fieldOf("markCleanCacheOnce").forGetter(i -> i.markCleanCacheOnce.stream().toList())
     ).apply(instance, SkillData::new));
     public static final Logger LOGGER = LogManager.getLogger("BreaBlast:Skill/Data");
-    public static final ResourceLocation SKILL_BASE_KEY = ResourceLocation.fromNamespaceAndPath(Nonard.MOD_ID, "skill_base");
-    public static final ResourceLocation SKILL_BEHAVIOR_KEY = ResourceLocation.fromNamespaceAndPath(Nonard.MOD_ID, "skill_behavior");
+    public static final ResourceLocation SKILL_BASE_KEY = ResourceLocation.fromNamespaceAndPath(Blast.MODID, "skill_base");
+    public static final ResourceLocation SKILL_BEHAVIOR_KEY = ResourceLocation.fromNamespaceAndPath(Blast.MODID, "skill_behavior");
 
     private boolean enabled = true;
     public final Skill<T> skill;
@@ -196,8 +197,10 @@ public class SkillData<T extends LivingEntity> {
         skill.stateChange.accept(this, newBehavior);
         this.behavior.ifPresent(b -> b.end.accept(this));
 
-        attributeCache.forEach(pair -> entity.getAttribute(pair.getFirst()).removeModifier(pair.getSecond()));
-        attributeCache.clear();
+        if(entity instanceof LivingEntity living){
+            attributeCache.forEach(pair -> living.getAttribute(pair.getFirst()).removeModifier(pair.getSecond()));
+            attributeCache.clear();
+        }
         cacheDataRoll();
 
 
@@ -238,8 +241,10 @@ public class SkillData<T extends LivingEntity> {
         EntityEventDistribute distribute = entity.getData(Horiz.EVENT_DISTRIBUTE);
         distribute.removeMarked(Skill.NAME, skillName);
         skill.onEnd.accept(this);
-        attributeCache.forEach(pair -> entity.getAttribute(pair.getFirst()).removeModifier(pair.getSecond()));
-        attributeCache.clear();
+        if(entity instanceof LivingEntity living){
+            attributeCache.forEach(pair -> living.getAttribute(pair.getFirst()).removeModifier(pair.getSecond()));
+            attributeCache.clear();
+        }
         enabled = false;
         behaviorName = skill.initBehavior;
         inactiveEnergy = skill.initialEnergy + skill.initialCharge * skill.inactiveEnergy;
@@ -395,7 +400,7 @@ public class SkillData<T extends LivingEntity> {
     @SuppressWarnings("null")
     public boolean addAutoCleanAttribute(AttributeModifier modifier, Holder<Attribute> type) {
         AttributeInstance instance;
-        if (!enabled || entity == null || (instance = entity.getAttribute(type)) == null) return false;
+        if (!enabled || entity == null || !(entity instanceof LivingEntity living) || (instance = living.getAttribute(type)) == null) return false;
 
         instance.addOrUpdateTransientModifier(modifier);
         this.attributeCache.add(Pair.of(type, modifier.id()));

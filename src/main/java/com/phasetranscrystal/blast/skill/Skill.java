@@ -2,10 +2,11 @@ package com.phasetranscrystal.blast.skill;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.phasetranscrystal.nonard.Nonard;
+import com.phasetranscrystal.blast.Blast;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.bus.api.Event;
 import org.apache.commons.lang3.function.ToBooleanBiFunction;
@@ -20,9 +21,9 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public class Skill<T extends LivingEntity> {
+public class Skill<T extends Entity> {
     public static final Logger LOGGER = LogManager.getLogger("BreaBlast:Skill");
-    public static final ResourceLocation NAME = Nonard.location("skill");
+    public static final ResourceLocation NAME = Blast.location("skill");
 
     public final int inactiveEnergy, maxCharge, initialEnergy, initialCharge, activeEnergy;
 
@@ -64,7 +65,7 @@ public class Skill<T extends LivingEntity> {
         this.flags = ImmutableSet.copyOf(builder.flags);
     }
 
-    public static class Builder<T extends LivingEntity> {
+    public static class Builder<T extends Entity> {
         public final Consumer<SkillData<T>> NO_ACTION = data -> {
         };
 
@@ -245,9 +246,9 @@ public class Skill<T extends LivingEntity> {
         }));
 
         public final String name;
-        public final TriConsumer<Builder<? extends LivingEntity>, String, String> consumer;
+        public final TriConsumer<Builder<? extends Entity>, String, String> consumer;
 
-        Flag(String name, TriConsumer<Builder<? extends LivingEntity>, String, String> consumer) {
+        Flag(String name, TriConsumer<Builder<? extends Entity>, String, String> consumer) {
             this.name = name;
             this.consumer = consumer;
         }
