@@ -11,11 +11,12 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.Optional;
 
-public record SkillDataSynPacket(Optional<Boolean> enabled, Optional<Optional<Skill<? super Player>>> skill, Optional<Optional<String>> stage,
-                                 Optional<Integer> inactiveEnergy, Optional<Integer> activeEnergy, Optional<Integer> activeTimes) implements CustomPacketPayload {
+public record SkillDataSynPacket(Optional<Optional<Skill<? super Player>>> skill,
+                                 Optional<Optional<String>> stage,
+                                 Optional<Integer> inactiveEnergy, Optional<Integer> activeEnergy,
+                                 Optional<Integer> activeTimes) implements CustomPacketPayload {
     public static final Type<SkillDataSynPacket> TYPE = new Type<>(Blast.location("player_skill_syn"));
     public static final StreamCodec<ByteBuf, SkillDataSynPacket> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.optional(ByteBufCodecs.BOOL), SkillDataSynPacket::enabled,
             ByteBufCodecs.optional(ByteBufCodecs.optional(ByteBufCodecs.fromCodec(Registries.SKILL.byNameCodec()))), pack -> pack.skill.map(opt -> opt.map(s -> s)),
             ByteBufCodecs.optional(ByteBufCodecs.optional(ByteBufCodecs.STRING_UTF8)), SkillDataSynPacket::stage,
             ByteBufCodecs.optional(ByteBufCodecs.VAR_INT), SkillDataSynPacket::inactiveEnergy,
@@ -25,9 +26,9 @@ public record SkillDataSynPacket(Optional<Boolean> enabled, Optional<Optional<Sk
     );
 
     @SuppressWarnings("all")
-    private static SkillDataSynPacket decode(Optional<Boolean> enabled, Optional<Optional<Skill<?>>> skill, Optional<Optional<String>> stage,
+    private static SkillDataSynPacket decode(Optional<Optional<Skill<?>>> skill, Optional<Optional<String>> stage,
                                              Optional<Integer> inactiveEnergy, Optional<Integer> activeEnergy, Optional<Integer> activeTimes) {
-        return new SkillDataSynPacket(enabled, skill.map(opt -> opt.map(s -> (Skill<? super Player>) s)), stage, inactiveEnergy, activeEnergy, activeTimes);
+        return new SkillDataSynPacket(skill.map(opt -> opt.map(s -> (Skill<? super Player>) s)), stage, inactiveEnergy, activeEnergy, activeTimes);
     }
 
     @Override
@@ -36,7 +37,40 @@ public record SkillDataSynPacket(Optional<Boolean> enabled, Optional<Optional<Sk
     }
 
     //Client Only
-    public static void consume(SkillDataSynPacket packet, IPayloadContext context){
-        Player player = context.
+    public static void consume(SkillDataSynPacket packet, IPayloadContext context) {
+        context.player().getData(Blast.SKILL_ATTACHMENT).consumeSynPacket(packet);
+    }
+
+    public static class Mutable {
+        public Optional<Optional<Skill<? super Player>>> skill = Optional.empty();
+        public Optional<Optional<String>> stage = Optional.empty();
+        public Optional<Integer> inactiveEnergy = Optional.empty();
+        public Optional<Integer> activeEnergy = Optional.empty();
+        public Optional<Integer> activeTimes = Optional.empty();
+
+
+        public void setSkill(Skill<? super Player> skill) {
+            this.skill = Optional.of(Optional.ofNullable(skill));
+        }
+
+        public void setStage(String stage) {
+            this.stage = Optional.of(Optional.ofNullable(stage));
+        }
+
+        public void setInactiveEnergy(int inactiveEnergy) {
+            this.inactiveEnergy = Optional.of(inactiveEnergy);
+        }
+
+        public void setActiveEnergy(int activeEnergy) {
+            this.activeEnergy = Optional.of(activeEnergy);
+        }
+
+        public void setActiveTimes(int activeTimes) {
+            this.activeTimes = Optional.of(activeTimes);
+        }
+
+        public SkillDataSynPacket build() {
+            return new SkillDataSynPacket(skill, stage, inactiveEnergy, activeEnergy, activeTimes);
+        }
     }
 }

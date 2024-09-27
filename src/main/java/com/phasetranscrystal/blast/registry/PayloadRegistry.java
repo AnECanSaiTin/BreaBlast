@@ -23,7 +23,7 @@ public class PayloadRegistry {
         registrar.playToClient(
                 SkillDataSynPacket.TYPE,
                 SkillDataSynPacket.STREAM_CODEC,
-                SkillDataSynPacket
-        )
+                SkillDataSynPacket::consume
+        );
     }
 }

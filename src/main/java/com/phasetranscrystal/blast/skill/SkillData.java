@@ -62,6 +62,8 @@ public class SkillData<T extends Entity> {
     };
     private final Consumer<EntityTickEvent.Post> ticker = event -> tickerHandler();//FINAL
 
+    private boolean markChanged = true;
+
 
     public SkillData(final Skill<T> skill) {
         this.skill = skill;
@@ -131,6 +133,8 @@ public class SkillData<T extends Entity> {
         skill.onStart.accept(this);
         skill.listeners.forEach((clazz, consumer) -> distribute.add(clazz, event -> ((BiConsumer) consumer).accept(event, this), Skill.NAME, skillName, SKILL_BASE_KEY));
 
+        markChanged = true;
+
         postBehavior(distribute);
     }
 
@@ -165,6 +169,7 @@ public class SkillData<T extends Entity> {
                 behavior.listeners.forEach((clazz, consumer) -> distribute.add(clazz, event -> ((BiConsumer) consumer).accept(event, this), Skill.NAME, skillName, SKILL_BEHAVIOR_KEY));
             }
         });
+        markChanged = true;
     }
 
     @SuppressWarnings("all")
@@ -197,12 +202,11 @@ public class SkillData<T extends Entity> {
         skill.stateChange.accept(this, newBehavior);
         this.behavior.ifPresent(b -> b.end.accept(this));
 
-        if(entity instanceof LivingEntity living){
+        if (entity instanceof LivingEntity living) {
             attributeCache.forEach(pair -> living.getAttribute(pair.getFirst()).removeModifier(pair.getSecond()));
             attributeCache.clear();
         }
         cacheDataRoll();
-
 
 
         this.behaviorName = newBehavior;
@@ -216,6 +220,7 @@ public class SkillData<T extends Entity> {
         } else {
             stageChangeSchedule = () -> {
                 this.behavior = Optional.empty();
+                markChanged = true;
             };
             delay = 1;
         }
@@ -241,7 +246,7 @@ public class SkillData<T extends Entity> {
         EntityEventDistribute distribute = entity.getData(Horiz.EVENT_DISTRIBUTE);
         distribute.removeMarked(Skill.NAME, skillName);
         skill.onEnd.accept(this);
-        if(entity instanceof LivingEntity living){
+        if (entity instanceof LivingEntity living) {
             attributeCache.forEach(pair -> living.getAttribute(pair.getFirst()).removeModifier(pair.getSecond()));
             attributeCache.clear();
         }
@@ -252,6 +257,7 @@ public class SkillData<T extends Entity> {
         markCleanCacheOnce.clear();
         markCleanKeys.clear();
         cacheData.clear();
+        markChanged = true;
         return true;
     }
 
@@ -323,6 +329,8 @@ public class SkillData<T extends Entity> {
 
         });
 
+        markChanged = true;
+
         return deltaEnergy; // 如果没有增加charge，仍然返回消耗的总能量点数
     }
 
@@ -332,14 +340,16 @@ public class SkillData<T extends Entity> {
         int deltaEnergy = nowa - this.activeEnergy;
         this.activeEnergy = nowa;
 
-        if (deltaEnergy != 0) {
-            this.behavior.ifPresent(behavior -> {
-                behavior.activeEnergyChange.accept(this, deltaEnergy);
-                if (activeEnergy <= 0) {
-                    behavior.activeEnd.accept(this);
-                }
-            });
-        }
+        if (deltaEnergy == 0) return 0;
+
+        this.behavior.ifPresent(behavior -> {
+            behavior.activeEnergyChange.accept(this, deltaEnergy);
+            if (activeEnergy <= 0) {
+                behavior.activeEnd.accept(this);
+            }
+        });
+
+        markChanged = true;
         return deltaEnergy;
     }
 
@@ -400,7 +410,8 @@ public class SkillData<T extends Entity> {
     @SuppressWarnings("null")
     public boolean addAutoCleanAttribute(AttributeModifier modifier, Holder<Attribute> type) {
         AttributeInstance instance;
-        if (!enabled || entity == null || !(entity instanceof LivingEntity living) || (instance = living.getAttribute(type)) == null) return false;
+        if (!enabled || entity == null || !(entity instanceof LivingEntity living) || (instance = living.getAttribute(type)) == null)
+            return false;
 
         instance.addOrUpdateTransientModifier(modifier);
         this.attributeCache.add(Pair.of(type, modifier.id()));
@@ -435,6 +446,7 @@ public class SkillData<T extends Entity> {
 
     public void consumerActiveStart() {
         this.activeTimes++;
+        //TODO 全局计数器
     }
 
     public int getActiveEnergy() {
@@ -459,18 +471,38 @@ public class SkillData<T extends Entity> {
 
     //下面的设定不会触发能量变动事件
     public void setInactiveEnergy(int inactiveEnergy) {
+        int old = this.inactiveEnergy;
         this.inactiveEnergy = Math.clamp(0, skill.inactiveEnergy * skill.maxCharge, inactiveEnergy);
+        if(this.inactiveEnergy != old) {
+            markChanged = true;
+        }
     }
 
     public void setCharge(int charge) {
+        int old = this.inactiveEnergy;
         this.inactiveEnergy = Math.clamp(0, skill.maxCharge, charge) * skill.inactiveEnergy;
+        if(this.inactiveEnergy != old) {
+            markChanged = true;
+        }
     }
 
     public void setActiveEnergy(int activeEnergy) {
+        int old = this.activeEnergy;
         this.activeEnergy = Math.clamp(0, skill.activeEnergy, activeEnergy);
+        if(this.activeEnergy != old) {
+            markChanged = true;
+        }
     }
 
-//    public record BehaviorRecord(String behaviorName, boolean isActive) {
+    public void consumeChange(){
+        this.markChanged = false;
+    }
+
+    public boolean isChanged() {
+        return markChanged;
+    }
+
+    //    public record BehaviorRecord(String behaviorName, boolean isActive) {
 //        public static final Codec<BehaviorRecord> CODEC = RecordCodecBuilder.create(instance -> instance.group(
 //                Codec.STRING.fieldOf("name").forGetter(BehaviorRecord::behaviorName),
 //                Codec.BOOL.fieldOf("active").forGetter(BehaviorRecord::isActive)

@@ -1,11 +1,10 @@
 package com.phasetranscrystal.blast;
 
 
-import com.mojang.serialization.Codec;
+import com.phasetranscrystal.blast.skill.SkillData;
 import com.phasetranscrystal.blast.skill.SkillGroup;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
@@ -26,23 +25,20 @@ public class Blast {
     }
 
     //PLAYER SKILLS
-    public static final DeferredRegister<AttachmentType<?>> ATTACHMENT = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, Blast.MODID);
+    private static final DeferredRegister<AttachmentType<?>> ATTACHMENT = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, Blast.MODID);
 
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<SkillGroup>> SKILL_ATTACHMENT =
-            ATTACHMENT.register("skill", () -> AttachmentType.builder(() -> new SkillGroup()).serialize((Codec) SkillData.CODEC).copyOnDeath().build());
-
-    public static final DeferredRegister<Item> ITEM = DeferredRegister.create(net.minecraft.core.registries.Registries.ITEM, Nonard.MOD_ID);
-
-    public static final DeferredHolder<Item, SkillTest.Start> START = ITEM.register("skill_start", SkillTest.Start::new);
+            ATTACHMENT.register("skill", () -> AttachmentType.builder(() -> new SkillGroup()).serialize(SkillGroup.CODEC).copyOnDeath().build());
 
 
     public static void onDeath(LivingDeathEvent event) {
-        event.getEntity().getExistingData(SKILL_ATTACHMENT).ifPresent(SkillData::requestDisable);
+        event.getEntity().getExistingData(SKILL_ATTACHMENT).flatMap(SkillGroup::getCurrentSkillData).ifPresent(SkillData::requestDisable);
     }
 
     public static void init(EntityJoinLevelEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
             serverPlayer.getData(SKILL_ATTACHMENT).bindEntity(serverPlayer);
+            serverPlayer.getData(SKILL_ATTACHMENT).getCurrentSkillData().ifPresent(SkillData::requestEnable);
         }
     }
 }

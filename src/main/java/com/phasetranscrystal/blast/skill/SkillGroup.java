@@ -4,36 +4,32 @@ import com.google.common.collect.ImmutableSet;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Holder;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-
+import java.util.*;
 
 public class SkillGroup {
     public static final Logger LOGGER = LogManager.getLogger("BreaBlast:Skill/Group");
     public static final Codec<SkillGroup> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Registries.SKILL.byNameCodec().listOf().fieldOf("allowed").forGetter(i -> i.allowedSkills.stream().map(s -> s).toList()),
-            SkillData.CODEC.optionalFieldOf("data").forGetter(s -> Optional.ofNullable((Skill<? extends Entity>)((Skill<?>)s.currentSkill)))
+            Registries.SKILL.byNameCodec().listOf().fieldOf("allowed").forGetter(i -> (List<Skill<?>>) i.allowedSkills.stream().toList()),
+            SkillData.CODEC.optionalFieldOf("data").forGetter(s -> Optional.ofNullable(s.currentSkill))
     ).apply(instance, SkillGroup::new));
 
-    public final ImmutableSet<Skill<?super Player>> allowedSkills;
+    public final ImmutableSet<Skill<? super Player>> allowedSkills;
     private SkillData<? super Player> currentSkill;
     private Player player;
 
+    private boolean changed = true;
+
     //infoCaches don't change
-    public boolean enabled = true;
-    public ResourceLocation skillName;
-    public String stage;
-    public int inactiveEnergy = 0;
-    public int activeEnergy = 0;
-    public int activeTimes = 0;
+    private Skill<? super Player> skillCache;
+    private String stageCache;
+    private int inactiveEnergyCache = 0;
+    private int activeEnergyCache = 0;
+    private int activeTimesCache = 0;
 
     private SkillGroup(ImmutableSet<Skill<? super Player>> collection) {
         this.allowedSkills = collection;
@@ -55,11 +51,12 @@ public class SkillGroup {
         return new SkillGroup(Arrays.stream(holders).map(Holder::value).collect(ImmutableSet.toImmutableSet()));
     }
 
-    public void bindEntity(Player entity) {
+    public void bindEntity(ServerPlayer entity) {
         if (this.player != null && !entity.getUUID().equals(this.player.getUUID())) {
             LOGGER.warn("Player instance (class={}) already exists. Skipped.", entity.getClass());
             return;
         }
+        changed = true;
 
         this.player = entity;
         if (this.currentSkill != null) currentSkill.bindEntity(entity);
@@ -75,13 +72,13 @@ public class SkillGroup {
         return Optional.ofNullable(currentSkill);
     }
 
-    public boolean disable() {
-        if (currentSkill != null) {
-            boolean flag = currentSkill.requestDisable();
-            currentSkill = null;
-            return flag;
-        }
-        return false;
+    public boolean changeToEmpty() {
+        if (currentSkill == null) return false;
+
+        boolean flag = currentSkill.requestDisable();
+        currentSkill = null;
+        changed = true;
+        return flag;
     }
 
     public boolean changeTo(Skill<? super Player> skill) {
@@ -95,6 +92,77 @@ public class SkillGroup {
         if (this.player != null) {
             this.currentSkill.bindEntity(this.player);
         }
+        changed = true;
         return true;
     }
+
+    //Client only
+    protected void consumeSynPacket(SkillDataSynPacket packet) {
+        packet.skill().ifPresent(s -> this.skillCache = s.orElse(null));
+        packet.stage().ifPresent(s -> this.stageCache = s.orElse(null));
+        packet.inactiveEnergy().ifPresent(e -> this.inactiveEnergyCache = e);
+        packet.activeEnergy().ifPresent(e -> this.activeEnergyCache = e);
+        packet.activeTimes().ifPresent(e -> this.activeTimesCache = e);
+    }
+
+
+    //ONLY CACHE
+    public Skill<? super Player> getSkillCache() {
+        return skillCache;
+    }
+
+    public String getStageCache() {
+        return stageCache;
+    }
+
+    public int getInactiveEnergyCache() {
+        return inactiveEnergyCache;
+    }
+
+    public int getActiveEnergyCache() {
+        return activeEnergyCache;
+    }
+
+    public int getActiveTimesCache() {
+        return activeTimesCache;
+    }
+
+    protected void tick() {
+        if (player == null || (!changed && (currentSkill == null || !currentSkill.isChanged()))) return;
+
+        changed = false;
+        if (currentSkill != null) currentSkill.consumeChange();
+
+        SkillDataSynPacket.Mutable mutable = new SkillDataSynPacket.Mutable();
+        Optional<SkillData<? super Player>> skillOpt = Optional.ofNullable(currentSkill);
+        Skill<? super Player> skill = skillOpt.map(d -> d.skill).orElse(null);
+        if (Objects.equals(skillCache, skill)) {
+            mutable.setSkill(skill);
+            this.skillCache = skill;
+        }
+        String stage = skillOpt.flatMap(SkillData::getBehaviorName).orElse(null);
+        if (Objects.equals(stageCache, stage)) {
+            mutable.setStage(stage);
+            this.stageCache = stage;
+        }
+        int inactiveEnergy = skillOpt.map(SkillData::getInactiveEnergy).orElse(0);
+        if (inactiveEnergyCache != inactiveEnergy) {
+            mutable.setInactiveEnergy(inactiveEnergy);
+            this.inactiveEnergyCache = inactiveEnergy;
+        }
+        int activeEnergy = skillOpt.map(SkillData::getActiveEnergy).orElse(0);
+        if (activeEnergyCache != activeEnergy) {
+            mutable.setActiveEnergy(activeEnergy);
+            this.activeEnergyCache = activeEnergy;
+        }
+        int activeTimes = skillOpt.map(SkillData::getActiveTimes).orElse(0);
+        if (activeTimesCache != activeTimes) {
+            mutable.setActiveTimes(activeTimes);
+            this.activeTimesCache = activeTimes;
+        }
+
+        //TODO
+
+    }
+
 }

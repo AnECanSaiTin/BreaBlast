@@ -12,7 +12,6 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-import static com.phasetranscrystal.nonard.testobjs.SkillTest.SKILL_ATTACHMENT;
 
 @EventBusSubscriber(modid = Blast.MODID, value = Dist.CLIENT)
 public class KeyInput {

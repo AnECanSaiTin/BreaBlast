@@ -3,6 +3,9 @@ package com.phasetranscrystal.blast.skill;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.phasetranscrystal.blast.Blast;
+import com.phasetranscrystal.blast.keylistener.KeyInputEvent;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
@@ -35,6 +38,8 @@ public class Skill<T extends Entity> {
     public final Consumer<SkillData<T>> onEnd;
     public final ToBooleanBiFunction<SkillData<T>, Optional<String>> judge;
     public final BiConsumer<SkillData<T>, Optional<String>> stateChange;
+
+    public final IntList keys;
     public final ImmutableMap<Class<? extends Event>, BiConsumer<? extends Event, SkillData<T>>> listeners;
     public final ImmutableSet<Flag> flags;
 
@@ -61,6 +66,8 @@ public class Skill<T extends Entity> {
         this.onEnd = builder.onEnd;
         this.judge = builder.judge;
         this.stateChange = builder.behaviorChange;
+
+        this.keys = IntList.of(builder.keys.toIntArray());
         this.listeners = ImmutableMap.copyOf(builder.listeners);
         this.flags = ImmutableSet.copyOf(builder.flags);
     }
@@ -81,6 +88,7 @@ public class Skill<T extends Entity> {
         public ToBooleanBiFunction<SkillData<T>, Optional<String>> judge = (data, behavior) -> true;
         public BiConsumer<SkillData<T>, Optional<String>> behaviorChange = (data, behaviorRecord) -> {
         };
+        public IntList keys = new IntArrayList();
         public HashMap<Class<? extends Event>, BiConsumer<? extends Event, SkillData<T>>> listeners = new HashMap<>();
 
         public HashSet<Flag> flags = new HashSet<>();
@@ -200,6 +208,12 @@ public class Skill<T extends Entity> {
 
         public Builder<T> onBehaviorChange(BiConsumer<SkillData<T>, Optional<String>> consumer) {
             this.behaviorChange = consumer;
+            return this;
+        }
+
+        public Builder<T> onKeyInput(BiConsumer<KeyInputEvent.Server, SkillData<T>> consumer, int... keyListeners) {
+            this.keys = new IntArrayList(keyListeners);
+            this.listeners.put(KeyInputEvent.Server.class, consumer);
             return this;
         }
 

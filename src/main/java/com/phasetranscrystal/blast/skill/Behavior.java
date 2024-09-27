@@ -1,13 +1,11 @@
 package com.phasetranscrystal.blast.skill;
 
 import com.google.common.collect.ImmutableMap;
+import com.phasetranscrystal.blast.keylistener.KeyInputEvent;
 import com.phasetranscrystal.horiz.EventConsumer;
-import com.phasetranscrystal.nonard.event.KeyInputEvent;
-import com.phasetranscrystal.nonard.util.SkillKeyInputHandler;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.bus.api.Event;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
@@ -40,7 +38,7 @@ public class Behavior<T extends Entity> {
         this.chargeReady = builder.chargeReady;
         this.chargeFull = builder.chargeFull;
         this.activeEnd = builder.activeEnd;
-        this.keys = builder.keys;
+        this.keys = IntList.of(builder.keys.toIntArray());
         this.listeners = ImmutableMap.copyOf(builder.listeners);
     }
 
@@ -48,8 +46,6 @@ public class Behavior<T extends Entity> {
         public final Consumer<SkillData<T>> EMPTY = data -> {
         };
         public final BiConsumer<SkillData<T>, Integer> EMPTY_BI = (data, relate) -> {
-        };
-        public final SkillKeyInputHandler<T> NO_KEY_HANDLER = (data, key, action, modifiers) -> {
         };
         public int delay = 1;
         public BiConsumer<SkillData<T>, Integer> inactiveEnergyChange = EMPTY_BI;
@@ -60,7 +56,7 @@ public class Behavior<T extends Entity> {
         public Consumer<SkillData<T>> activeEnd = EMPTY;
         public Consumer<SkillData<T>> start = EMPTY;
         public Consumer<SkillData<T>> end = EMPTY;
-        public IntArrayList keys = new IntArrayList();
+        public IntList keys = new IntArrayList();
         public HashMap<Class<? extends Event>, BiConsumer<? extends Event, SkillData<T>>> listeners = new HashMap<>();
 
         public static <T extends Entity> Builder<T> create() {
@@ -153,17 +149,9 @@ public class Behavior<T extends Entity> {
             return this;
         }
 
-        /**
-         * 设置按键监听行为<br>
-         * 仅玩家生效<br>
-         * 当处于该行为时，按键会被捕获并阻断原版逻辑，执行handler逻辑
-         * @param keys 被监听的按键
-         * @param consumer 按键处理
-         */
-        public Builder<T> setKeyInputListener(int[] keys, BiConsumer<KeyInputEvent, SkillData<T>> consumer) {
-            this.keys.clear();
-            this.keys.addElements(0, keys);
-            listeners.put(KeyInputEvent.class, consumer);
+        public Builder<T> onKeyInput(BiConsumer<KeyInputEvent.Server, SkillData<T>> consumer, int... keyListeners) {
+            this.keys = new IntArrayList(keyListeners);
+            this.listeners.put(KeyInputEvent.Server.class, consumer);
             return this;
         }
 
