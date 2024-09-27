@@ -39,7 +39,7 @@ public class SkillTest {
 
     public static void bootstrap(IEventBus bus) {
         SKILL.register(bus);
-        ATTACHMENT.register(bus);
+//        ATTACHMENT.register(bus);
         ITEM.register(bus);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, LivingDeathEvent.class, SkillTest::onDeath);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, EntityJoinLevelEvent.class, SkillTest::init);
@@ -117,25 +117,7 @@ public class SkillTest {
                 .end();
     });
 
-    public static final DeferredRegister<AttachmentType<?>> ATTACHMENT = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, Nonard.MOD_ID);
 
-    public static final DeferredHolder<AttachmentType<?>, AttachmentType<SkillData<ServerPlayer>>> SKILL_ATTACHMENT =
-            ATTACHMENT.register("skill", () -> AttachmentType.builder(() -> new SkillData<>(TEST_SKILL.get())).serialize((Codec) SkillData.CODEC).copyOnDeath().build());
-
-    public static final DeferredRegister<Item> ITEM = DeferredRegister.create(net.minecraft.core.registries.Registries.ITEM, Nonard.MOD_ID);
-
-    public static final DeferredHolder<Item, Start> START = ITEM.register("skill_start", Start::new);
-
-
-    public static void onDeath(LivingDeathEvent event) {
-        event.getEntity().getExistingData(SKILL_ATTACHMENT).ifPresent(SkillData::requestDisable);
-    }
-
-    public static void init(EntityJoinLevelEvent event) {
-        if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-            serverPlayer.getData(SKILL_ATTACHMENT).bindEntity(serverPlayer);
-        }
-    }
 
     public static class Start extends Item {
         public Start() {

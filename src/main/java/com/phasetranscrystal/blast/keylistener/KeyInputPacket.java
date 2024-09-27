@@ -12,7 +12,8 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 
 public record KeyInputPacket(short var) implements CustomPacketPayload {
-    public static final Type<KeyInputPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(Blast.MODID, "key_input"));
+    public static final Type<KeyInputPacket> TYPE = new Type<>(Blast.location("key_input"));
+    public static final StreamCodec<ByteBuf, KeyInputPacket> STREAM_CODEC = ByteBufCodecs.SHORT.map(KeyInputPacket::new, KeyInputPacket::var);
 
     public KeyInputPacket(int key, int modifier, int action) {
         this((short) (((action & 0b1) << 15) | ((modifier & 0x7F) << 9) | (key & 0x1FF)));
@@ -29,8 +30,6 @@ public record KeyInputPacket(short var) implements CustomPacketPayload {
     public int action() {
         return (var >>> 15) & 0b1;
     }
-
-    public static final StreamCodec<ByteBuf, KeyInputPacket> STREAM_CODEC = ByteBufCodecs.SHORT.map(KeyInputPacket::new, KeyInputPacket::var);
 
     @Override
     public Type<? extends CustomPacketPayload> type() {

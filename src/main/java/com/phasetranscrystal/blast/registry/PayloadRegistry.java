@@ -2,6 +2,7 @@ package com.phasetranscrystal.blast.registry;
 
 import com.phasetranscrystal.blast.Blast;
 import com.phasetranscrystal.blast.keylistener.KeyInputPacket;
+import com.phasetranscrystal.blast.skill.SkillDataSynPacket;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -18,5 +19,11 @@ public class PayloadRegistry {
                 KeyInputPacket.STREAM_CODEC,
                 KeyInputPacket::serverHandler
         );
+
+        registrar.playToClient(
+                SkillDataSynPacket.TYPE,
+                SkillDataSynPacket.STREAM_CODEC,
+                SkillDataSynPacket
+        )
     }
 }
