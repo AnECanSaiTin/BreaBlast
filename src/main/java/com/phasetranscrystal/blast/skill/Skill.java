@@ -3,7 +3,9 @@ package com.phasetranscrystal.blast.skill;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.phasetranscrystal.blast.Blast;
-import com.phasetranscrystal.blast.keylistener.KeyInputEvent;
+import com.phasetranscrystal.blast.Registries;
+import com.phasetranscrystal.blast.player.KeyInput;
+import com.phasetranscrystal.blast.player.KeyInputEvent;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.resources.ResourceKey;
@@ -31,13 +33,13 @@ public class Skill<T extends Entity> {
     public final int inactiveEnergy, maxCharge, initialEnergy, initialCharge, activeEnergy;
 
     public final Optional<String> initBehavior;
-
     public final ImmutableMap<String, Behavior<T>> behaviors;
 
     public final Consumer<SkillData<T>> onStart;
     public final Consumer<SkillData<T>> onEnd;
     public final ToBooleanBiFunction<SkillData<T>, Optional<String>> judge;
     public final BiConsumer<SkillData<T>, Optional<String>> stateChange;
+    public final KeyInput.Consumer<T> keyChange;
 
     public final IntList keys;
     public final ImmutableMap<Class<? extends Event>, BiConsumer<? extends Event, SkillData<T>>> listeners;
@@ -66,6 +68,7 @@ public class Skill<T extends Entity> {
         this.onEnd = builder.onEnd;
         this.judge = builder.judge;
         this.stateChange = builder.behaviorChange;
+        this.keyChange = builder.keyChange;
 
         this.keys = IntList.of(builder.keys.toIntArray());
         this.listeners = ImmutableMap.copyOf(builder.listeners);
@@ -87,6 +90,8 @@ public class Skill<T extends Entity> {
         public Consumer<SkillData<T>> onEnd = NO_ACTION;
         public ToBooleanBiFunction<SkillData<T>, Optional<String>> judge = (data, behavior) -> true;
         public BiConsumer<SkillData<T>, Optional<String>> behaviorChange = (data, behaviorRecord) -> {
+        };
+        public KeyInput.Consumer<T> keyChange = (data, packet) -> {
         };
         public IntList keys = new IntArrayList();
         public HashMap<Class<? extends Event>, BiConsumer<? extends Event, SkillData<T>>> listeners = new HashMap<>();
@@ -127,12 +132,12 @@ public class Skill<T extends Entity> {
         }
 
         /**
-         * @param energyCost 能量上限
-         * @param maxCharge 充能层数上限
+         * @param energyCost    能量上限
+         * @param maxCharge     充能层数上限
          * @param initialEnergy 初始能量
          * @param initialCharge 初始充能层数
-         * @param activeEnergy 技能开启后能量上限
-         * @param <T> 技能释放主体
+         * @param activeEnergy  技能开启后能量上限
+         * @param <T>           技能释放主体
          */
         public static <T extends LivingEntity> Builder<T> of(int energyCost, int maxCharge, int initialEnergy, int initialCharge, int activeEnergy) {
             return new Builder<>(energyCost, maxCharge, initialEnergy, initialCharge, activeEnergy);
@@ -191,9 +196,10 @@ public class Skill<T extends Entity> {
         /**
          * 为技能增加事件监听器<br>
          * 技能处于*启用*状态时可被监听触发
-         * @param clazz 需要监听的实体事件
+         *
+         * @param clazz    需要监听的实体事件
          * @param consumer 事件行为
-         * @param <E> 被监听的事件
+         * @param <E>      被监听的事件
          */
         public <E extends Event> Builder<T> onEvent(Class<E> clazz, BiConsumer<E, SkillData<T>> consumer) {
             listeners.put(clazz, consumer);
@@ -211,9 +217,9 @@ public class Skill<T extends Entity> {
             return this;
         }
 
-        public Builder<T> onKeyInput(BiConsumer<KeyInputEvent.Server, SkillData<T>> consumer, int... keyListeners) {
+        public Builder<T> onKeyInput(KeyInput.Consumer<T> consumer, int... keyListeners) {
             this.keys = new IntArrayList(keyListeners);
-            this.listeners.put(KeyInputEvent.Server.class, consumer);
+            this.keyChange = consumer;
             return this;
         }
 

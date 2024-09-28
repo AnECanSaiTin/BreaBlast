@@ -1,8 +1,11 @@
-package com.phasetranscrystal.blast.skill;
+package com.phasetranscrystal.blast.player;
 
 import com.google.common.collect.ImmutableSet;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.phasetranscrystal.blast.Registries;
+import com.phasetranscrystal.blast.skill.Skill;
+import com.phasetranscrystal.blast.skill.SkillData;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -103,6 +106,14 @@ public class SkillGroup {
         packet.inactiveEnergy().ifPresent(e -> this.inactiveEnergyCache = e);
         packet.activeEnergy().ifPresent(e -> this.activeEnergyCache = e);
         packet.activeTimes().ifPresent(e -> this.activeTimesCache = e);
+    }
+
+    protected void consumeInputPacket(KeyInputPacket packet){
+        getCurrentSkillData().ifPresent(data -> {
+            int compoundKey = packet.var() & 0x7FFF;
+            if(data.skill.keys.contains(compoundKey))
+                data.skill.keyChange.accept((SkillData) data,packet);
+        });
     }
 
 

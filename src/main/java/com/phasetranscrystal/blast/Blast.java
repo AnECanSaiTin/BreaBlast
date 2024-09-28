@@ -2,7 +2,7 @@ package com.phasetranscrystal.blast;
 
 
 import com.phasetranscrystal.blast.skill.SkillData;
-import com.phasetranscrystal.blast.skill.SkillGroup;
+import com.phasetranscrystal.blast.player.SkillGroup;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;

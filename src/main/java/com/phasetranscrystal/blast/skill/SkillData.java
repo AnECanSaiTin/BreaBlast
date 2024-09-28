@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.blast.Blast;
+import com.phasetranscrystal.blast.Registries;
 import com.phasetranscrystal.horiz.EntityEventDistribute;
 import com.phasetranscrystal.horiz.Horiz;
 import net.minecraft.core.Holder;

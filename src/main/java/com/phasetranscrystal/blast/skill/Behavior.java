@@ -1,7 +1,8 @@
 package com.phasetranscrystal.blast.skill;
 
 import com.google.common.collect.ImmutableMap;
-import com.phasetranscrystal.blast.keylistener.KeyInputEvent;
+import com.phasetranscrystal.blast.player.KeyInput;
+import com.phasetranscrystal.blast.player.KeyInputEvent;
 import com.phasetranscrystal.horiz.EventConsumer;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -26,6 +27,7 @@ public class Behavior<T extends Entity> {
     public final BiConsumer<SkillData<T>, Integer> activeEnergyChange;
     public final BiConsumer<SkillData<T>, Integer> chargeChange;
     public final IntList keys;
+    public final KeyInput.Consumer<T> keyChange;
     public final ImmutableMap<Class<? extends Event>, BiConsumer<? extends Event, SkillData<T>>> listeners;
 
     public Behavior(Builder<T> builder) {
@@ -39,6 +41,7 @@ public class Behavior<T extends Entity> {
         this.chargeFull = builder.chargeFull;
         this.activeEnd = builder.activeEnd;
         this.keys = IntList.of(builder.keys.toIntArray());
+        this.keyChange = builder.keyChange;
         this.listeners = ImmutableMap.copyOf(builder.listeners);
     }
 
@@ -57,6 +60,8 @@ public class Behavior<T extends Entity> {
         public Consumer<SkillData<T>> start = EMPTY;
         public Consumer<SkillData<T>> end = EMPTY;
         public IntList keys = new IntArrayList();
+        public KeyInput.Consumer<T> keyChange = (data, packet) -> {
+        };
         public HashMap<Class<? extends Event>, BiConsumer<? extends Event, SkillData<T>>> listeners = new HashMap<>();
 
         public static <T extends Entity> Builder<T> create() {
@@ -149,9 +154,9 @@ public class Behavior<T extends Entity> {
             return this;
         }
 
-        public Builder<T> onKeyInput(BiConsumer<KeyInputEvent.Server, SkillData<T>> consumer, int... keyListeners) {
+        public Builder<T> onKeyInput(KeyInput.Consumer<T> keyChange, int... keyListeners) {
             this.keys = new IntArrayList(keyListeners);
-            this.listeners.put(KeyInputEvent.Server.class, consumer);
+            this.keyChange = keyChange;
             return this;
         }
 

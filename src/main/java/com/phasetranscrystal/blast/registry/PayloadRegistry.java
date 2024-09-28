@@ -1,8 +1,8 @@
 package com.phasetranscrystal.blast.registry;
 
 import com.phasetranscrystal.blast.Blast;
-import com.phasetranscrystal.blast.keylistener.KeyInputPacket;
-import com.phasetranscrystal.blast.skill.SkillDataSynPacket;
+import com.phasetranscrystal.blast.player.KeyInputPacket;
+import com.phasetranscrystal.blast.player.SkillDataSynPacket;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;

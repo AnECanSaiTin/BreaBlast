@@ -1,12 +1,12 @@
-package com.phasetranscrystal.blast.keylistener;
+package com.phasetranscrystal.blast.player;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.ICancellableEvent;
-import net.neoforged.neoforge.event.entity.EntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
+@Deprecated
 public abstract class KeyInputEvent extends PlayerEvent {
     private final Player player;
     private final int key;

@@ -1,6 +1,6 @@
-package com.phasetranscrystal.blast.skill;
+package com.phasetranscrystal.blast;
 
-import com.phasetranscrystal.blast.Blast;
+import com.phasetranscrystal.blast.skill.Skill;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.neoforged.bus.api.SubscribeEvent;

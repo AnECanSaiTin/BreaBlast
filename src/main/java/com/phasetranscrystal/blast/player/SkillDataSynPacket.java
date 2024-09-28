@@ -1,8 +1,9 @@
-package com.phasetranscrystal.blast.skill;
+package com.phasetranscrystal.blast.player;
 
 import com.phasetranscrystal.blast.Blast;
+import com.phasetranscrystal.blast.Registries;
+import com.phasetranscrystal.blast.skill.Skill;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
