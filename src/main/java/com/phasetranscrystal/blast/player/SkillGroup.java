@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 public class SkillGroup {
     public static final Logger LOGGER = LogManager.getLogger("BreaBlast:Skill/Group");
@@ -34,7 +35,7 @@ public class SkillGroup {
     private int activeEnergyCache = 0;
     private int activeTimesCache = 0;
 
-    private SkillGroup(ImmutableSet<Skill<? super Player>> collection) {
+    public SkillGroup() {
         this.allowedSkills = collection;
     }
 
@@ -44,14 +45,16 @@ public class SkillGroup {
         this.currentSkill = (SkillData<? super Player>) data.orElse(null);
     }
 
-    public static SkillGroup create(Collection<Holder<Skill<? super Player>>> collection) {
+    public static SkillGroup create(Collection<Supplier<Skill<? super Player>>> collection) {
         if (collection.isEmpty()) throw new IllegalArgumentException("Skill collection is empty");
-        return new SkillGroup(collection.stream().map(Holder::value).collect(ImmutableSet.toImmutableSet()));
+        return new SkillGroup(collection.stream().map(Supplier::get).collect(ImmutableSet.toImmutableSet()));
     }
 
-    public static SkillGroup create(Holder<Skill<? super Player>>... holders) {
+    //UNSAFE WARNING
+    public static SkillGroup create(Supplier<Skill<?>>... holders) {
         if (holders.length == 0) throw new IllegalArgumentException("Skills array is empty");
-        return new SkillGroup(Arrays.stream(holders).map(Holder::value).collect(ImmutableSet.toImmutableSet()));
+        return new SkillGroup(Arrays.stream(holders).map(s -> {(Skill<? super Player>) s;
+        }).map(Supplier::get).collect(ImmutableSet.toImmutableSet()));
     }
 
     public void bindEntity(ServerPlayer entity) {
@@ -108,11 +111,11 @@ public class SkillGroup {
         packet.activeTimes().ifPresent(e -> this.activeTimesCache = e);
     }
 
-    protected void consumeInputPacket(KeyInputPacket packet){
+    protected void consumeInputPacket(KeyInputPacket packet) {
         getCurrentSkillData().ifPresent(data -> {
             int compoundKey = packet.var() & 0x7FFF;
-            if(data.skill.keys.contains(compoundKey))
-                data.skill.keyChange.accept((SkillData) data,packet);
+            if (data.skill.keys.contains(compoundKey))
+                data.skill.keyChange.accept((SkillData) data, packet);
         });
     }
 

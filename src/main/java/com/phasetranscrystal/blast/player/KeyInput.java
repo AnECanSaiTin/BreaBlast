@@ -3,10 +3,12 @@ package com.phasetranscrystal.blast.player;
 import com.phasetranscrystal.blast.Blast;
 import com.phasetranscrystal.blast.skill.SkillData;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.Optional;
@@ -15,8 +17,8 @@ import java.util.Optional;
 @EventBusSubscriber(modid = Blast.MODID, value = Dist.CLIENT)
 public class KeyInput {
     @SubscribeEvent
-    public static void keyboard(KeyInputEvent.Client event) {
-        clientClickCheck(event.getKey(), event.getModifiers(), event.getAction(), () -> event.setCanceled(true));
+    public static void keyboard(InputEvent.MouseButton.Pre event) {
+        clientClickCheck(event.getButton(), event.getModifiers(), event.getAction(), () -> event.setCanceled(true));
     }
 
     public static void clientClickCheck(int key, int modifiers, int action, Runnable canceller) {
