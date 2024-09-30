@@ -105,20 +105,18 @@ public class PlayerSkillRegistry {
                             if ("active".equals(behavior.orElse(""))) data.consumeCharge();
                         }
                     })
-                    .end(data -> data.getEntity().displayClientMessage(Component.literal("skill disabled"), false))
+                    .end(data -> data.getEntity().displayClientMessage(Component.literal("skill disabled"), false), Player.class)
     );
 
-    public static final DeferredHolder<Skill<?>, Skill<ServerPlayer>> OLD_MA = SKILL.register("old_ma", () -> {
-        return Skill.Builder
-                .<ServerPlayer>of(50, 3, 0, 0, 50)
-                .start(data -> data.getEntity().displayClientMessage(Component.literal("OldMaInit"), false))
-                .judge((data, name) -> data.getCharge() == 3)
-                .addBehavior(builder -> builder
-                                .onKeyInput((data, pack) -> data.getEntity().sendSystemMessage(Component.literal("按键拦截成功")), GLFW.GLFW_KEY_H)
-                                .endWith(data -> data.getEntity().displayClientMessage(Component.literal("OldMaEnd"), false)),
-                        "key test")
-                .end();
-    });
+    public static final DeferredHolder<Skill<?>, Skill<Player>> OLD_MA = SKILL.register("old_ma", () -> Skill.Builder
+            .<Player>of(50, 3, 0, 0, 50)
+            .start(data -> data.getEntity().displayClientMessage(Component.literal("OldMaInit"), false))
+            .judge((data, name) -> data.getCharge() == 3)
+            .addBehavior(builder -> builder
+                            .onKeyInput((data, pack) -> data.getEntity().sendSystemMessage(Component.literal("按键拦截成功")), GLFW.GLFW_KEY_H)
+                            .endWith(data -> data.getEntity().displayClientMessage(Component.literal("OldMaEnd"), false)),
+                    "key test")
+            .end(Player.class));
 
 
     public static class Start extends Item {

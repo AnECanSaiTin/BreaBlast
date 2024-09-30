@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableSet;
 import com.phasetranscrystal.blast.Blast;
 import com.phasetranscrystal.blast.Registries;
 import com.phasetranscrystal.blast.player.KeyInput;
-import com.phasetranscrystal.blast.player.KeyInputEvent;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.resources.ResourceKey;
@@ -45,7 +44,9 @@ public class Skill<T extends Entity> {
     public final ImmutableMap<Class<? extends Event>, BiConsumer<? extends Event, SkillData<T>>> listeners;
     public final ImmutableSet<Flag> flags;
 
-    private Skill(Builder<T> builder) {
+    public final Class<T> clazz;
+
+    private Skill(Builder<T> builder, Class<T> clazz) {
         this.inactiveEnergy = Math.max(builder.inactiveEnergy, 0);
         this.maxCharge = Math.max(builder.maxCharge, 1);
         this.initialEnergy = Math.clamp(0, inactiveEnergy, builder.initialEnergy);
@@ -73,6 +74,8 @@ public class Skill<T extends Entity> {
         this.keys = IntList.of(builder.keys.toIntArray());
         this.listeners = ImmutableMap.copyOf(builder.listeners);
         this.flags = ImmutableSet.copyOf(builder.flags);
+
+        this.clazz = clazz;
     }
 
     public static class Builder<T extends Entity> {
@@ -240,13 +243,13 @@ public class Skill<T extends Entity> {
             return this;
         }
 
-        public Skill<T> end() {
-            return new Skill<>(this);
+        public Skill<T> end(Class<T> targetType) {
+            return new Skill<>(this, targetType);
         }
 
-        public Skill<T> end(Consumer<SkillData<T>> consumer) {
+        public Skill<T> end(Consumer<SkillData<T>> consumer, Class<T> targetType) {
             onEnd = consumer;
-            return end();
+            return end(targetType);
         }
     }
 
