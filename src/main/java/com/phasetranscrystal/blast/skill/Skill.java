@@ -166,9 +166,6 @@ public class Skill<T extends Entity> {
             return this;
         }
 
-        /**
-         * 判断当前状态是否可切换为active阶段？？
-         */
         public Builder<T> inactive(Consumer<Behavior.Builder<T>> inactive) {
             inactive.accept(this.behaviors.computeIfAbsent("inactive", key -> Behavior.Builder.create()));
             return this;

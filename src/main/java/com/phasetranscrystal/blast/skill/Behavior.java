@@ -7,6 +7,7 @@ import com.phasetranscrystal.horiz.EventConsumer;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.bus.api.Event;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
@@ -18,6 +19,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class Behavior<T extends Entity> {
+    public static final Behavior<Entity> EMPTY = Behavior.Builder.create().build();
 
     public final int delay;
     public final Consumer<SkillData<T>> start;
@@ -28,7 +30,14 @@ public class Behavior<T extends Entity> {
     public final BiConsumer<SkillData<T>, Integer> inactiveEnergyChange;
     public final BiConsumer<SkillData<T>, Integer> activeEnergyChange;
     public final BiConsumer<SkillData<T>, Integer> chargeChange;
-    public final IntList keys;
+    /**
+     * 被监听的按键
+     */
+    public final IntOpenHashSet keys;
+    /**
+     * 按键行为<br/>
+     * 只有keys中存在的按键才会触发该行为
+     */
     public final KeyInput.Consumer<T> keyChange;
     public final ImmutableMap<Class<? extends Event>, BiConsumer<? extends Event, SkillData<T>>> listeners;
 
@@ -42,7 +51,7 @@ public class Behavior<T extends Entity> {
         this.chargeReady = builder.chargeReady;
         this.chargeFull = builder.chargeFull;
         this.activeEnd = builder.activeEnd;
-        this.keys = IntList.of(builder.keys.toIntArray());
+        this.keys = new IntOpenHashSet(builder.keys);
         this.keyChange = builder.keyChange;
         this.listeners = ImmutableMap.copyOf(builder.listeners);
     }
