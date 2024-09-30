@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.Optional;
 
-public record SkillDataSynPacket(Optional<Optional<Skill<? super Player>>> skill,
+public record SkillDataSynPacket(Optional<Optional<Skill<Player>>> skill,
                                  Optional<Optional<String>> stage,
                                  Optional<Integer> inactiveEnergy, Optional<Integer> activeEnergy,
                                  Optional<Integer> activeTimes) implements CustomPacketPayload {
@@ -29,7 +29,7 @@ public record SkillDataSynPacket(Optional<Optional<Skill<? super Player>>> skill
     @SuppressWarnings("all")
     private static SkillDataSynPacket decode(Optional<Optional<Skill<?>>> skill, Optional<Optional<String>> stage,
                                              Optional<Integer> inactiveEnergy, Optional<Integer> activeEnergy, Optional<Integer> activeTimes) {
-        return new SkillDataSynPacket(skill.map(opt -> opt.map(s -> (Skill<? super Player>) s)), stage, inactiveEnergy, activeEnergy, activeTimes);
+        return new SkillDataSynPacket(skill.map(opt -> opt.map(s -> (Skill<Player>) s)), stage, inactiveEnergy, activeEnergy, activeTimes);
     }
 
     @Override
@@ -43,14 +43,14 @@ public record SkillDataSynPacket(Optional<Optional<Skill<? super Player>>> skill
     }
 
     public static class Mutable {
-        public Optional<Optional<Skill<? super Player>>> skill = Optional.empty();
+        public Optional<Optional<Skill<Player>>> skill = Optional.empty();
         public Optional<Optional<String>> stage = Optional.empty();
         public Optional<Integer> inactiveEnergy = Optional.empty();
         public Optional<Integer> activeEnergy = Optional.empty();
         public Optional<Integer> activeTimes = Optional.empty();
 
 
-        public void setSkill(Skill<? super Player> skill) {
+        public void setSkill(Skill<Player> skill) {
             this.skill = Optional.of(Optional.ofNullable(skill));
         }
 

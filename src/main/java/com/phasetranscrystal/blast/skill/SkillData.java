@@ -103,9 +103,8 @@ public class SkillData<T extends Entity> {
     @SuppressWarnings("unchecked,unused")
     public boolean tryCastAnd(LivingEntity entity, Consumer<T> consumer) {
         try {
-            T e = (T) entity;
-            if (e == null) return false;
-            consumer.accept(e);
+            if(skill.clazz.isAssignableFrom(entity.getClass())) return false;
+            consumer.accept((T) entity);
             return true;
         } catch (ClassCastException e) {
             return false;

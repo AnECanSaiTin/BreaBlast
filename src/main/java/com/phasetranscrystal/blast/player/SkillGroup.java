@@ -9,6 +9,7 @@ import com.phasetranscrystal.blast.skill.SkillData;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,43 +19,30 @@ import java.util.function.Supplier;
 public class SkillGroup {
     public static final Logger LOGGER = LogManager.getLogger("BreaBlast:Skill/Group");
     public static final Codec<SkillGroup> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Registries.SKILL.byNameCodec().listOf().fieldOf("allowed").forGetter(i -> (List<Skill<?>>) i.allowedSkills.stream().toList()),
+            Registries.SKILL.byNameCodec().orElse(null).listOf().fieldOf("allowed").forGetter(i -> (List<Skill<?>>) ((Object) i.unlockedSkills.stream().toList())),
             SkillData.CODEC.optionalFieldOf("data").forGetter(s -> Optional.ofNullable(s.currentSkill))
     ).apply(instance, SkillGroup::new));
 
-    public final ImmutableSet<Skill<? super Player>> allowedSkills;
-    private SkillData<? super Player> currentSkill;
-    private Player player;
+    private final Set<Skill<Player>> unlockedSkills = new HashSet<>();
+    private SkillData<Player> currentSkill;
+    private ServerPlayer player;
 
     private boolean changed = true;
 
     //infoCaches don't change
-    private Skill<? super Player> skillCache;
+    private Skill<Player> skillCache;
     private String stageCache;
     private int inactiveEnergyCache = 0;
     private int activeEnergyCache = 0;
     private int activeTimesCache = 0;
 
     public SkillGroup() {
-        this.allowedSkills = collection;
     }
 
     @SuppressWarnings("unchecked")
     private SkillGroup(List<Skill<?>> allowed, Optional<SkillData<?>> data) {
-        this.allowedSkills = allowed.stream().map(skill -> (Skill<? super Player>) skill).collect(ImmutableSet.toImmutableSet());
-        this.currentSkill = (SkillData<? super Player>) data.orElse(null);
-    }
-
-    public static SkillGroup create(Collection<Supplier<Skill<? super Player>>> collection) {
-        if (collection.isEmpty()) throw new IllegalArgumentException("Skill collection is empty");
-        return new SkillGroup(collection.stream().map(Supplier::get).collect(ImmutableSet.toImmutableSet()));
-    }
-
-    //UNSAFE WARNING
-    public static SkillGroup create(Supplier<Skill<?>>... holders) {
-        if (holders.length == 0) throw new IllegalArgumentException("Skills array is empty");
-        return new SkillGroup(Arrays.stream(holders).map(s -> {(Skill<? super Player>) s;
-        }).map(Supplier::get).collect(ImmutableSet.toImmutableSet()));
+        allowed.stream().filter(s -> s != null && s.clazz.isAssignableFrom(Player.class)).map(s -> (Skill<Player>) s).forEach(unlockedSkills::add);
+        this.currentSkill = (SkillData<Player>) data.orElse(null);
     }
 
     public void bindEntity(ServerPlayer entity) {
@@ -68,13 +56,11 @@ public class SkillGroup {
         if (this.currentSkill != null) currentSkill.bindEntity(entity);
     }
 
-
-    public Optional<Skill<? super Player>> getCurrentSkill() {
+    public Optional<Skill<Player>> getCurrentSkill() {
         return Optional.ofNullable(currentSkill).map(d -> d.skill);
     }
 
-    //WARNING: USING THIS TO MODIFY THINGS IS NOT RECOMMENDED UNLESS YOU KNOW WHAT YOU ARE DOING.
-    public Optional<SkillData<? super Player>> getCurrentSkillData() {
+    public Optional<SkillData<Player>> getCurrentSkillData() {
         return Optional.ofNullable(currentSkill);
     }
 
@@ -87,14 +73,14 @@ public class SkillGroup {
         return flag;
     }
 
-    public boolean changeTo(Skill<? super Player> skill) {
-        if (skill == null || !allowedSkills.contains(skill) || (currentSkill != null && currentSkill.skill == skill))
+    public boolean changeTo(Skill<?> skill) {
+        if (skill == null || !unlockedSkills.contains(skill) || (currentSkill != null && currentSkill.skill == skill))
             return false;
         if (currentSkill != null) {
             currentSkill.requestDisable();
             currentSkill = null;
         }
-        this.currentSkill = new SkillData<>(skill);
+        this.currentSkill = new SkillData<>((Skill<Player>) skill);
         if (this.player != null) {
             this.currentSkill.bindEntity(this.player);
         }
@@ -115,13 +101,33 @@ public class SkillGroup {
         getCurrentSkillData().ifPresent(data -> {
             int compoundKey = packet.var() & 0x7FFF;
             if (data.skill.keys.contains(compoundKey))
-                data.skill.keyChange.accept((SkillData) data, packet);
+                data.skill.keyChange.accept(data, packet);
         });
+    }
+
+    public boolean unlock(Holder<Skill<?>> holder) {
+        return unlock(holder.value());
+    }
+
+    public boolean unlock(Skill<?> skill) {
+        if (!unlockedSkills.contains(skill) && skill.clazz.isAssignableFrom(Player.class)) {
+            unlockedSkills.add((Skill<Player>) skill);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean lock(Holder<Skill<?>> holder) {
+        return lock(holder.value());
+    }
+
+    public boolean lock(Skill<?> skill) {
+        return unlockedSkills.remove(skill);
     }
 
 
     //ONLY CACHE
-    public Skill<? super Player> getSkillCache() {
+    public Skill<Player> getSkillCache() {
         return skillCache;
     }
 
@@ -148,8 +154,8 @@ public class SkillGroup {
         if (currentSkill != null) currentSkill.consumeChange();
 
         SkillDataSynPacket.Mutable mutable = new SkillDataSynPacket.Mutable();
-        Optional<SkillData<? super Player>> skillOpt = Optional.ofNullable(currentSkill);
-        Skill<? super Player> skill = skillOpt.map(d -> d.skill).orElse(null);
+        Optional<SkillData<Player>> skillOpt = Optional.ofNullable(currentSkill);
+        Skill<Player> skill = skillOpt.map(d -> d.skill).orElse(null);
         if (Objects.equals(skillCache, skill)) {
             mutable.setSkill(skill);
             this.skillCache = skill;
@@ -175,7 +181,7 @@ public class SkillGroup {
             this.activeTimesCache = activeTimes;
         }
 
-        //TODO
+        PacketDistributor.sendToPlayer(player, mutable.build());
 
     }
 
