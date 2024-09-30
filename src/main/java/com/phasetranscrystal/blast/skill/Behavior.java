@@ -5,11 +5,13 @@ import com.phasetranscrystal.blast.player.KeyInput;
 import com.phasetranscrystal.blast.player.KeyInputEvent;
 import com.phasetranscrystal.horiz.EventConsumer;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.bus.api.Event;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.HashMap;
 import java.util.function.BiConsumer;
@@ -59,7 +61,7 @@ public class Behavior<T extends Entity> {
         public Consumer<SkillData<T>> activeEnd = EMPTY;
         public Consumer<SkillData<T>> start = EMPTY;
         public Consumer<SkillData<T>> end = EMPTY;
-        public IntList keys = new IntArrayList();
+        public IntArraySet keys = new IntArraySet();
         public KeyInput.Consumer<T> keyChange = (data, packet) -> {
         };
         public HashMap<Class<? extends Event>, BiConsumer<? extends Event, SkillData<T>>> listeners = new HashMap<>();
@@ -155,7 +157,14 @@ public class Behavior<T extends Entity> {
         }
 
         public Builder<T> onKeyInput(KeyInput.Consumer<T> keyChange, int... keyListeners) {
-            this.keys = new IntArrayList(keyListeners);
+            //用set来杜绝重复添加
+            this.keys = new IntArraySet(keyListeners);
+
+            if (keys.contains(256)) {
+                //256为ESC键，不允许绑定
+                throw new IllegalArgumentException("Key 256 is reserved for escape key");
+            }
+
             this.keyChange = keyChange;
             return this;
         }
