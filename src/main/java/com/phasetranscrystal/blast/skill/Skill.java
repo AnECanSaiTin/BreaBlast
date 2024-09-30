@@ -121,15 +121,15 @@ public class Skill<T extends Entity> {
             this.initialCharge = initialCharge;
         }
 
-        public static <T extends LivingEntity> Builder<T> of(int energyCost, int maxChargeTimes) {
+        public static <T extends Entity> Builder<T> of(int energyCost, int maxChargeTimes) {
             return new Builder<>(energyCost, maxChargeTimes);
         }
 
-        public static <T extends LivingEntity> Builder<T> of(int energyCost) {
+        public static <T extends Entity> Builder<T> of(int energyCost) {
             return new Builder<>(energyCost);
         }
 
-        public static <T extends LivingEntity> Builder<T> of(Skill<T> skill) {
+        public static <T extends Entity> Builder<T> of(Skill<T> skill) {
             Builder<T> builder = of(skill.inactiveEnergy, skill.maxCharge, skill.initialEnergy, skill.initialCharge, skill.activeEnergy);
             return builder.copyFrom(skill);
         }
@@ -142,7 +142,7 @@ public class Skill<T extends Entity> {
          * @param activeEnergy  技能开启后能量上限
          * @param <T>           技能释放主体
          */
-        public static <T extends LivingEntity> Builder<T> of(int energyCost, int maxCharge, int initialEnergy, int initialCharge, int activeEnergy) {
+        public static <T extends Entity> Builder<T> of(int energyCost, int maxCharge, int initialEnergy, int initialCharge, int activeEnergy) {
             return new Builder<>(energyCost, maxCharge, initialEnergy, initialCharge, activeEnergy);
         }
 

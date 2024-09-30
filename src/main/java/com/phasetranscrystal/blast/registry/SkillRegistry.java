@@ -10,17 +10,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -28,28 +24,29 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(modid = Blast.MODID)
-public class PlayerSkillRegistry {
+public class SkillRegistry {
 
     @SubscribeEvent(priority = EventPriority.LOW)
     public static void onDeath(LivingDeathEvent event) {
-        event.getEntity().getExistingData(Blast.SKILL_ATTACHMENT).flatMap(SkillGroup::getCurrentSkillData).ifPresent(SkillData::requestDisable);
+        event.getEntity().getExistingData(Blast.SKILL_ATTACHMENT).map(SkillGroup::getCurrentSkillData).ifPresent(SkillData::requestDisable);
     }
 
     @SubscribeEvent(priority = EventPriority.LOW)
     public static void init(EntityJoinLevelEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
             serverPlayer.getData(Blast.SKILL_ATTACHMENT).bindEntity(serverPlayer);
-            serverPlayer.getData(Blast.SKILL_ATTACHMENT).getCurrentSkillData().ifPresent(SkillData::requestEnable);
+            serverPlayer.getData(Blast.SKILL_ATTACHMENT).getCurrentSkillData().requestEnable();
         }
     }
 
     public static final DeferredRegister<Skill<?>> SKILL = DeferredRegister.create(Registries.SKILL, Blast.MODID);
+
+    public static final DeferredHolder<Skill<?>, Skill<? extends Entity>> EMPTY = SKILL.register("empty", () -> Skill.Builder.of(0).end(Entity.class));
 
     public static final DeferredHolder<Skill<?>, Skill<Player>> TEST_SKILL = SKILL.register("test",
             () -> Skill.Builder.<Player>of(30, 4)
